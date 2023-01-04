@@ -307,6 +307,11 @@ transazioni = file_to_arrayofarray(POS_T)
 
 """
 
+# struttura di un array log
+"""
+
+"""
+
 commands_list = """
 Lista di Comandi:
 /accredito [danaro], [debitore], [causale] - accredita l'ammontare indicato nel proprio conto
@@ -1093,6 +1098,39 @@ async def lista(message: types.Message):
         return
 
     risposta = print_accrediti()
+
+    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
+
+
+# il comando /logs mostra solo a Pippo una lista di logs del bot
+@dp.message_handler(commands=["logs"])
+async def logs(message: types.Message):
+
+    id_mittente = str(message.from_user.id)
+    id_chat = str(message.chat.id)
+
+    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
+    if (is_stranger(id_mittente)):
+        log(message, "logs")
+        return
+
+    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
+    if (is_blacklisted(id_mittente)):
+        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
+        return
+
+    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
+    if (id_mittente != ID_PIPPO):
+        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
+        return
+
+    risposta = ""
+
+    logs = file_to_arrayofarray(POS_LOGS)
+
+    for i in range(len(logs)):
+
+        risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + logs[i][2] + "\nis_bot: " + logs[i][3] + "\nfirst_name: " + logs[i][4] + "\nlast_name: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguage_code: " + logs[i][7] + "\nchat_id: " + logs[i][8] + "\nchat_type: " + logs[i][9] + "\nchat_title: " + logs[i][10] + "\nchat_bio: " + logs[i][11] + "\nchat_description: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
@@ -2901,7 +2939,7 @@ async def tastiera(message: types.Message):
     if (id_mittente == str(ID_LUCA)):
         keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/no", "/nope"], ["/nuke", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"], ["/strozzino"]]
     elif (id_mittente == str(ID_PIPPO)):
-        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/nope", "/nuke"], ["/okay", "/ping", "/ruok"], ["/saldo"]]
+        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/logs", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/ruok", "/saldo"]]
     elif (id_mittente == str(ID_RIKY)):
         keyboard = [["/aiuto", "/capitale", "/coda"], ["/conti", "/crediti", "/debiti"], ["/movimenti", "/no", "/nope"], ["/ok", "/okay", "/ping"], ["/ruok", "/saldo"]]
     else:
