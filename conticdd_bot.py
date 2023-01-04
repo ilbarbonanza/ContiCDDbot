@@ -132,12 +132,25 @@ def is_stranger(id: str):
 
 # metodo per loggare le informazioni di uno sconosciuto
 def log(message: types.Message, command: str):
-    info = "Un utente sconosciuto [id: " + str(message.from_user.id) + " ; is_bot: " + str(message.from_user.is_bot) + " ; first_name: " + str(message.from_user.first_name) + " ; last_name: " + str(message.from_user.last_name) + " ; username: " + str(message.from_user.username) + " ; language_code: " + str(message.from_user.language_code) + " ; chat_id: " + str(message.chat.id) + " ; chat_type: " + str(message.chat.type) + " ; chat_title: " + str(message.chat.title) + " ; chat_bio: " + str(message.chat.bio) + " ; chat_description: " + str(message.chat.description) + "] ha provato ad usare il comando /" + command
-    logging.warning(info)
-    info = datetime.now().strftime(FORMAT + " %H:%M:%S") + " | " + info
-    file = open(POS_LOGS, "at")
-    file.write(info + "\n")
-    file.close()
+    info = []
+    info.append(datetime.now().strftime("%d/%m/%Y")) # [0]: data
+    info.append(datetime.now().strftime("%H:%M:%S")) # [1]: ora
+    info.append(str(message.from_user.id)) # [2]: id account Telegram
+    info.append(str(message.from_user.is_bot)) # [3]: è bot?
+    info.append(str(message.from_user.first_name)) # [4]: nome
+    info.append(str(message.from_user.last_name)) # [5]: cognome
+    info.append(str(message.from_user.username)) # [6]: username
+    info.append(str(message.from_user.language_code)) # [7]: codice lingua
+    info.append(str(message.chat.id)) # [8]: id chat
+    info.append(str(message.chat.type)) # [9]: tipo chat
+    info.append(str(message.chat.title)) # [10]: titolo chat
+    info.append(str(message.chat.bio)) # [11]: biografia chat
+    info.append(str(message.chat.description)) # [12] descrizione chat
+    info.append(command) # [13]: comando usato
+    array_to_file(POS_LOGS, info)
+    #file = open(POS_LOGS, "at")
+    #file.write(info)
+    #file.close()
     return
 
 
@@ -194,7 +207,7 @@ def sort_debtor(val):
 # metodo per stampare la data nel formato gg/mm/aaaa
 def time():
     now = datetime.now()
-    return now.strftime(FORMAT)
+    return now.strftime("%d/%m/%Y")
 
 
 # metodo per scrivere in un file le informazioni contenute in una variabile stringa
@@ -229,16 +242,16 @@ dp = Dispatcher(bot)
 # inizializzazione sheet
 gc = gspread.service_account() # controllare che il file service_account.json esista e sia messo nella cartella giusta
 SHEET_ID = critical_data["sheet_id"]
-sheet = gc.open_by_key(SHEET_ID).get_worksheet(0) # sheet 2022
+sheet = gc.open_by_key(SHEET_ID).get_worksheet(0) # sheet 2023
 feuille = gc.open_by_key(SHEET_ID).get_worksheet(1) # sheet ATM
 foglio = gc.open_by_key(SHEET_ID).get_worksheet(2) # sheet Spese
 
 # posizioni dei file
-POS_A = critical_data["pos_a"]
-POS_B = critical_data["pos_b"]
-POS_L = critical_data["pos_l"]
-POS_LOGS = critical_data["pos_logs"]
-POS_T = critical_data["pos_t"]
+POS_A = cwd + critical_data["pos_a"]
+POS_B = cwd + critical_data["pos_b"]
+POS_L = cwd + critical_data["pos_l"]
+POS_LOGS = cwd + critical_data["pos_logs"]
+POS_T = cwd + critical_data["pos_t"]
 
 # associazioni tra nomi ed id degli account Telegram
 nomi_id = critical_data["nomi_id"]
@@ -251,9 +264,6 @@ logging.basicConfig(format = "%(asctime)s %(levelname)-8s %(message)s", level = 
 
 # inizializzazione locale
 locale.setlocale(locale.LC_ALL, "")
-
-# formattazione della data
-FORMAT = "%d/%m/%Y"
 
 # id dell'account Telegram di Luca
 ID_LUCA = nomi_id[0][1]
@@ -309,6 +319,21 @@ transazioni = file_to_arrayofarray(POS_T)
 
 # struttura di un array log
 """
+
+[0]: data
+[1]: ora
+[2]: id account Telegram
+[3]: è bot?
+[4]: nome
+[5]: cognome
+[6]: username
+[7]: codice lingua
+[8]: id chat
+[9]: tipo chat
+[10]: titolo chat
+[11]: biografia chat
+[12]: descrizione chat
+[13]: comando usato
 
 """
 
@@ -889,18 +914,20 @@ async def crediti(message: types.Message):
         return
 
     empty = True
+    totale = 0
 
     for i in range(len(accrediti)):
         id_creditore = accrediti[i][4]
         if (id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)):
             empty = False
+            totale += float(accrediti[i][9])
 
     # se non ci sono crediti in attesa manda un messaggio e fine
     if (len(accrediti) <= 0 or empty):
         await bot.send_message(id_chat, "Non ci sono crediti in attesa")
         return
 
-    risposta = print_crediti(id_mittente)
+    risposta = print_crediti(id_mittente) + "\n\nTotale: " + locale.currency(abs(totale))
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
@@ -923,18 +950,20 @@ async def debiti(message: types.Message):
         return
 
     empty = True
+    totale = 0
 
     for i in range(len(accrediti)):
         id_debitore = accrediti[i][8]
         if (id_debitore == id_mittente or (id_debitore == ID_CASSA and id_mittente == ID_LUCA)):
             empty = False
+            totale += float(accrediti[i][9])
 
     # se non ci sono debiti in attesa manda un messaggio e fine
     if (len(accrediti) <= 0 or empty):
         await bot.send_message(id_chat, "Non ci sono debiti in attesa")
         return
 
-    risposta = print_debiti(id_mittente)
+    risposta = print_debiti(id_mittente) + "\n\nTotale: " + locale.currency(abs(totale))
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
@@ -965,7 +994,7 @@ async def debug(message: types.Message):
     risposta = "*Array*\n\n\n'accrediti':\n" + str(accrediti) + "\n\n'listanera':\n" + str(listanera) + "\n\n'transazioni':\n" + str(transazioni)
 
     # contenuto dei file    
-    risposta += "\n\n\n\n*File*\n\n\n'accrediti':\n" + str(file_to_arrayofarray(POS_A)) + "\n\n'last':\n" + str(file_to_variable(POS_L)) + "\n\n'listanera':\n" + str(file_to_array(POS_B)) + "\n\n'transazioni':\n" + str(file_to_arrayofarray(POS_T))
+    risposta += "\n\n\n\n*File*\n\n\n'accrediti':\n" + str(file_to_arrayofarray(POS_A)) + "\n\n'last':\n" + str(file_to_variable(POS_L)) + "\n\n'listanera':\n" + str(file_to_array(POS_B)) + "\n\n'logs':\n" + str(file_to_array(POS_LOGS)) + "\n\n'transazioni':\n" + str(file_to_arrayofarray(POS_T))
 
     response = ""
 
@@ -1132,7 +1161,7 @@ async def logs(message: types.Message):
 
         risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + logs[i][2] + "\nis_bot: " + logs[i][3] + "\nfirst_name: " + logs[i][4] + "\nlast_name: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguage_code: " + logs[i][7] + "\nchat_id: " + logs[i][8] + "\nchat_type: " + logs[i][9] + "\nchat_title: " + logs[i][10] + "\nchat_bio: " + logs[i][11] + "\nchat_description: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
 
-    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
+    await bot.send_message(id_chat, risposta)
 
 
 # il comando /movimenti mostra una lista di movimenti del proprio conto
@@ -2004,7 +2033,7 @@ async def ping(message: types.Message):
     # invia i promemoria
     for i in range(len(accrediti)):
         id_creditore = accrediti[i][4]
-        if (id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)):
+        if ((id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)) and (int(locale.atof((sheet.cell(accrediti[i][5], accrediti[i][6] + 3).value)[3:]) * 100) - int(abs(float(accrediti[i][9])) * 100) < 0)):
             counter += 1
             risposta = "*" + accrediti[i][3] + "* ti ricorda di pagare l'accredito con codice *" + str(accrediti[i][0]) + "*"
             await bot.send_message(accrediti[i][8], risposta, parse_mode = "Markdown")
@@ -2690,7 +2719,7 @@ async def saldo(message: types.Message):
         # percentuale di soldi custoditi in ATM rispetto al totale
         percentuale = feuille.cell(2, 12).value
 
-        risposta += "\nSoldi in ATM:  " + soldi + " (" + percentuale + ")\n"
+        risposta += "\n\nSoldi in ATM:  " + soldi + " (" + percentuale + ")\n"
 
         # intervallo di celle che contengono i saldi dei conti
         intervallo = rowcol_to_a1(5, 11) + ":" + rowcol_to_a1(5, 74)
@@ -3188,131 +3217,6 @@ async def versamentocassa(message: types.Message):
 # ------------------------------------------------------------------------   COMANDI  STUPIDI  ------------------------------------------------------------------------
 
 
-# il comando /albo manda una foto deep fried di Albo
-@dp.message_handler(commands = ["albo"])
-async def albo(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "albo")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_albo.jpg"
-    albo = open(pos, "rb")
-
-    await bot.send_photo(id_chat, albo)
-
-    albo.close()
-
-
-# il comando /cele manda una foto deep fried di Cele
-@dp.message_handler(commands = ["cele"])
-async def cele(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "cele")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_cele.jpg"
-    cele = open(pos, "rb")
-
-    await bot.send_photo(id_chat, cele)
-
-    cele.close()
-
-
-# il comando /easteregg manda una gif come easter egg
-@dp.message_handler(commands = ["easteregg"])
-async def easteregg(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "easteregg")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/rickrolled.gif"
-    rickrolled = open(pos, "rb")
-
-    await bot.send_video(id_chat, rickrolled)
-
-    rickrolled.close()
-
-
-# il comando /jaco manda una foto deep fried di Jaco
-@dp.message_handler(commands = ["jaco"])
-async def jaco(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "jaco")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_jaco.jpg"
-    jaco = open(pos, "rb")
-
-    await bot.send_photo(id_chat, jaco)
-
-    jaco.close()
-
-
-# il comando /luca manda una foto deep fried di Luca
-@dp.message_handler(commands = ["luca"])
-async def luca(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "luca")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_luca.jpg"
-    luca = open(pos, "rb")
-
-    await bot.send_photo(id_chat, luca)
-
-    luca.close()
-
-
 # il comando /prova serve a provare una funzionalità
 @dp.message_handler(commands = ["prova"])
 async def prova(message: types.Message):
@@ -3338,81 +3242,6 @@ async def prova(message: types.Message):
     # da testare
 
     await bot.send_message(id_chat, "Ciao ", parse_mode = "Markdown", reply_to_message_id = message.message_id)
-
-
-# il comando /riky manda una foto deep fried di Riky
-@dp.message_handler(commands = ["riky"])
-async def riky(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "riky")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_riky.jpg"
-    riky = open(pos, "rb")
-
-    await bot.send_photo(id_chat, riky)
-
-    riky.close()
-
-
-# il comando /salmo manda una foto di Salmo
-@dp.message_handler(commands = ["salmo"])
-async def salmo(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "salmo")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/salmo.jpg"
-    salmo = open(pos, "rb")
-
-    await bot.send_photo(id_chat, salmo)
-
-    salmo.close()
-
-
-# il comando /smu manda una foto deep fried di Smu
-@dp.message_handler(commands = ["smu"])
-async def smu(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "smu")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    pos = "/home/pi/ContiCDDbot/easteregg/deepfried_smu.jpg"
-    smu = open(pos, "rb")
-
-    await bot.send_photo(id_chat, smu)
-
-    smu.close()
 
 
 
