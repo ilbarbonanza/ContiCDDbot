@@ -2033,7 +2033,7 @@ async def ping(message: types.Message):
     # invia i promemoria
     for i in range(len(accrediti)):
         id_creditore = accrediti[i][4]
-        if ((id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)) and (int(locale.atof((sheet.cell(accrediti[i][5], accrediti[i][6] + 3).value)[3:]) * 100) - int(abs(float(accrediti[i][9])) * 100) < 0)):
+        if ((id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)) and (int(locale.atof((sheet.cell(int(accrediti[i][5]), int(accrediti[i][6]) + 3).value)[3:]) * 100) - int(abs(float(accrediti[i][9])) * 100) < 0)):
             counter += 1
             risposta = "*" + accrediti[i][3] + "* ti ricorda di pagare l'accredito con codice *" + str(accrediti[i][0]) + "*"
             await bot.send_message(accrediti[i][8], risposta, parse_mode = "Markdown")
