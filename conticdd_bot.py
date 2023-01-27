@@ -147,7 +147,8 @@ def log(message: types.Message, command: str):
     info.append(str(message.chat.bio)) # [11]: biografia chat
     info.append(str(message.chat.description)) # [12] descrizione chat
     info.append(command) # [13]: comando usato
-    array_to_file(POS_LOGS, info)
+    logs.append(info)
+    arrayofarray_to_file(POS_LOGS, logs)
     #file = open(POS_LOGS, "at")
     #file.write(info)
     #file.close()
@@ -282,6 +283,9 @@ accrediti = file_to_arrayofarray(POS_A)
 
 # inizializzazione dell'array listanera a partire dal file blacklist.txt
 listanera = file_to_array(POS_B)
+
+# inizializzazione dell'array logs a partire dal file logs.txt
+logs = file_to_arrayofarray(POS_LOGS)
 
 # array in cui vengono salvate le transazioni in attesa
 transazioni = file_to_arrayofarray(POS_T)
@@ -1129,39 +1133,6 @@ async def lista(message: types.Message):
     risposta = print_accrediti()
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
-
-
-# il comando /logs mostra solo a Pippo una lista di logs del bot
-@dp.message_handler(commands=["logs"])
-async def logs(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "logs")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
-    if (id_mittente != ID_PIPPO):
-        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
-        return
-
-    risposta = ""
-
-    logs = file_to_arrayofarray(POS_LOGS)
-
-    for i in range(len(logs)):
-
-        risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + logs[i][2] + "\nis_bot: " + logs[i][3] + "\nfirst_name: " + logs[i][4] + "\nlast_name: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguage_code: " + logs[i][7] + "\nchat_id: " + logs[i][8] + "\nchat_type: " + logs[i][9] + "\nchat_title: " + logs[i][10] + "\nchat_bio: " + logs[i][11] + "\nchat_description: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
-
-    await bot.send_message(id_chat, risposta)
 
 
 # il comando /movimenti mostra una lista di movimenti del proprio conto
@@ -2650,6 +2621,39 @@ async def rimuovitastiera(message: types.Message):
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_markup = markup)
 
 
+# il comando /registro mostra solo a Pippo una lista di logs del bot
+@dp.message_handler(commands=["registro"])
+async def registro(message: types.Message):
+
+    id_mittente = str(message.from_user.id)
+    id_chat = str(message.chat.id)
+
+    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
+    if (is_stranger(id_mittente)):
+        log(message, "registro")
+        return
+
+    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
+    if (is_blacklisted(id_mittente)):
+        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
+        return
+
+    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
+    if (id_mittente != ID_PIPPO):
+        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
+        return
+
+    risposta = ""
+
+    for i in range(len(logs)):
+
+        id = logs[i][2]
+
+        risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + id + "\nisBot: " + logs[i][3] + "\nfirstName: [" + logs[i][4] + "](tg://user?id=" + id + ")\nlastName: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguageCode: " + logs[i][7] + "\nchatId: " + logs[i][8] + "\nchatType: " + logs[i][9] + "\nchatTitle: " + logs[i][10] + "\nchatBio: " + logs[i][11] + "\nchatDescription: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
+
+    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
+
+
 # il comando /ruok manda un messaggio per verificare che il bot sia online e funzioni normalmente
 @dp.message_handler(commands = ["ruok"])
 async def ruok(message: types.Message):
@@ -2968,7 +2972,7 @@ async def tastiera(message: types.Message):
     if (id_mittente == str(ID_LUCA)):
         keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/no", "/nope"], ["/nuke", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"], ["/strozzino"]]
     elif (id_mittente == str(ID_PIPPO)):
-        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/logs", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/nope", "/nuke"], ["/okay", "/ping", "/registro"], ["/ruok", "/saldo"]]
     elif (id_mittente == str(ID_RIKY)):
         keyboard = [["/aiuto", "/capitale", "/coda"], ["/conti", "/crediti", "/debiti"], ["/movimenti", "/no", "/nope"], ["/ok", "/okay", "/ping"], ["/ruok", "/saldo"]]
     else:
