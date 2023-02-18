@@ -149,9 +149,6 @@ def log(message: types.Message, command: str):
     info.append(command) # [13]: comando usato
     logs.append(info)
     arrayofarray_to_file(POS_LOGS, logs)
-    #file = open(POS_LOGS, "at")
-    #file.write(info)
-    #file.close()
     return
 
 
@@ -2504,6 +2501,43 @@ async def push(message: types.Message):
     await bot.send_message(id, "*Sei stato aggiunto alla blacklist*", parse_mode = "Markdown")
 
 
+# il comando /registro mostra solo a Pippo una lista di logs del bot
+@dp.message_handler(commands=["registro"])
+async def registro(message: types.Message):
+
+    id_mittente = str(message.from_user.id)
+    id_chat = str(message.chat.id)
+
+    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
+    if (is_stranger(id_mittente)):
+        log(message, "registro")
+        return
+
+    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
+    if (is_blacklisted(id_mittente)):
+        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
+        return
+
+    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
+    if (id_mittente != ID_PIPPO):
+        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
+        return
+
+    risposta = ""
+
+    for i in range(len(logs)):
+
+        id = logs[i][2]
+
+        risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + id + "\nisBot: " + logs[i][3] + "\nfirstName: [" + logs[i][4] + "](tg://user?id=" + id + ")\nlastName: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguageCode: " + logs[i][7] + "\nchatId: " + logs[i][8] + "\nchatType: " + logs[i][9] + "\nchatTitle: " + logs[i][10] + "\nchatBio: " + logs[i][11] + "\nchatDescription: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
+
+    if (not risposta):
+        await bot.send_message(id_chat, "La lista dei log è vuota")
+        return
+
+    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
+
+
 # il comando /ricarica ricarica il proprio conto dell'ammontare indicato
 @dp.message_handler(commands = ["ricarica"])
 async def ricarica(message: types.Message):
@@ -2619,39 +2653,6 @@ async def rimuovitastiera(message: types.Message):
     risposta = mention + ", la tastiera è stata rimossa"
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_markup = markup)
-
-
-# il comando /registro mostra solo a Pippo una lista di logs del bot
-@dp.message_handler(commands=["registro"])
-async def registro(message: types.Message):
-
-    id_mittente = str(message.from_user.id)
-    id_chat = str(message.chat.id)
-
-    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
-    if (is_stranger(id_mittente)):
-        log(message, "registro")
-        return
-
-    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
-    if (is_blacklisted(id_mittente)):
-        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
-        return
-
-    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
-    if (id_mittente != ID_PIPPO):
-        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
-        return
-
-    risposta = ""
-
-    for i in range(len(logs)):
-
-        id = logs[i][2]
-
-        risposta += str(i + 1) + ") " + logs[i][0] + " " + logs[i][1] + "\nid: " + id + "\nisBot: " + logs[i][3] + "\nfirstName: [" + logs[i][4] + "](tg://user?id=" + id + ")\nlastName: " + logs[i][5] + "\nusername: " + logs[i][6] + "\nlanguageCode: " + logs[i][7] + "\nchatId: " + logs[i][8] + "\nchatType: " + logs[i][9] + "\nchatTitle: " + logs[i][10] + "\nchatBio: " + logs[i][11] + "\nchatDescription: " + logs[i][12] + "\ncommand: " + logs[i][13] + "\n\n"
-
-    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
 
 # il comando /ruok manda un messaggio per verificare che il bot sia online e funzioni normalmente
