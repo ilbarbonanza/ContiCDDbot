@@ -852,13 +852,20 @@ async def cantina(message: types.Message):
     cantina.sort(key = sort_product)
 
     risposta = "Ecco la cantina:\n         Prodotto         | Avanzato | € Avanzato\n"
+    counter = 0
 
     # scrivo le cose in magazzino nella stringa risposta
     for i in range(len(cantina)):
+        
+        avanzato = cantina[i][3]
 
-        risposta += str(i + 1) + ") " + cantina[i][0] + " |      " + cantina[i][3] + "      |      " + cantina[i][6] + "\n"
+        if (locale.atof(avanzato) <= 0):
+            continue
 
-    risposta += "\n\nTotale: " + foglio.cell(21, 2).value
+        risposta += str(counter + 1) + ") " + cantina[i][0] + " |      " + avanzato + "      |      " + cantina[i][6] + "\n"
+        counter += 1
+
+    risposta += "\nTotale: " + foglio.cell(21, 2).value
 
     await bot.send_message(id_chat, risposta)
 
