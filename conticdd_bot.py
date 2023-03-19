@@ -856,7 +856,7 @@ async def cantina(message: types.Message):
     # scrivo le cose in magazzino nella stringa risposta
     for i in range(len(cantina)):
 
-        risposta += str(i + 1) + ") " + cantina[i][0] + " | " + cantina[i][3] + " | " + cantina[i][6] + "\n"
+        risposta += str(i + 1) + ") " + cantina[i][0] + " |      " + cantina[i][3] + "      |      " + cantina[i][6] + "\n"
 
     risposta += "\n\nTotale: " + foglio.cell(21, 2).value
 
