@@ -201,6 +201,9 @@ def print_debiti(id: str):
 def sort_debtor(val):
     return val[7]
 
+# metodo di supporto per ordinare l'array cantina
+def sort_product(val):
+    return val[0]
 
 # metodo per stampare la data nel formato gg/mm/aaaa
 def time():
@@ -342,6 +345,7 @@ commands_list = """
 Lista di Comandi:
 /accredito [danaro], [debitore], [causale] - accredita l'ammontare indicato nel proprio conto
 /aiuto - lista di comandi
+/cantina - mostra le cose in magazzino
 /capitale - mostra quanti soldi custodiscono Luca e Riky
 /conti - lista dei nomi dei conti disponibili
 /crediti - mostra i crediti in attesa
@@ -816,6 +820,47 @@ async def blacklist(message: types.Message):
         risposta = risposta + "\n- " + mention
     
     await bot.send_message(id_chat, "Ecco chi è in blacklist:" + risposta, parse_mode = "Markdown")
+
+
+# il comando /cantina mostra le cose in magazzino
+@dp.message_handler(commands = ["cantina"])
+async def cantina(message: types.Message):
+
+    id_mittente = str(message.from_user.id)
+    id_chat = str(message.chat.id)
+
+    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
+    if (is_stranger(id_mittente)):
+        log(message, "cantina")
+        return
+
+    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
+    if (is_blacklisted(id_mittente)):
+        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
+        return
+
+    # ultima riga da leggere
+    riga_end = int(foglio.cell(25, 8).value)
+
+    # intervallo di celle che contengono le cose in magazzino
+    intervallo = rowcol_to_a1(26, 1) + ":" + rowcol_to_a1(riga_end, 7)
+
+    # lista delle cose in magazzino a partire dall'intervallo specificato
+    cantina = foglio.get(intervallo)
+
+    # ordina l'array cantina per il nome del prodotto
+    cantina.sort(key = sort_product)
+
+    risposta = "Ecco la cantina:\n         Prodotto         | Avanzato | € Avanzato\n"
+
+    # scrivo le cose in magazzino nella stringa risposta
+    for i in range(len(cantina)):
+
+        risposta += str(i + 1) + ") " + cantina[i][0] + " | " + cantina[i][3] + " | " + cantina[i][6] + "\n"
+
+    risposta += "\n\nTotale: " + foglio.cell(21, 2).value
+
+    await bot.send_message(id_chat, risposta)
 
 
 # il comando /capitale mostra la quantità di denaro di tutti i conti custodita da Luca e Riky
@@ -2971,13 +3016,13 @@ async def tastiera(message: types.Message):
 
     # tastiera dei comandi
     if (id_mittente == str(ID_LUCA)):
-        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/no", "/nope"], ["/nuke", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"], ["/strozzino"]]
+        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/no"], ["/nope", "/nuke", "/ok"], ["/okay", "/ping", "/ruok"], ["/saldo", "/strozzino"]]
     elif (id_mittente == str(ID_PIPPO)):
-        keyboard = [["/aiuto", "/blacklist", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/debug", "/lista"], ["/movimenti", "/nope", "/nuke"], ["/okay", "/ping", "/registro"], ["/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/registro", "/ruok", "/saldo"]]
     elif (id_mittente == str(ID_RIKY)):
-        keyboard = [["/aiuto", "/capitale", "/coda"], ["/conti", "/crediti", "/debiti"], ["/movimenti", "/no", "/nope"], ["/ok", "/okay", "/ping"], ["/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/cantina", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/movimenti", "/no"], ["/nope", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"]]
     else:
-        keyboard = [["/aiuto", "/capitale", "/conti"], ["/crediti", "/debiti", "/movimenti"], ["/nope", "/okay", "/ping"], ["/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/cantina", "/capitale"], ["/conti", "/crediti", "/debiti"], ["/movimenti", "/nope", "/okay"], ["/ping", "/ruok", "/saldo"]]
 
     # inizializzazione tastiera dei comandi
     markup = types.ReplyKeyboardMarkup(keyboard = keyboard, resize_keyboard = True, one_time_keyboard = True, selective = True)
