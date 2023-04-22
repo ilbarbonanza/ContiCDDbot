@@ -226,10 +226,10 @@ def variable_to_file(pos: str, variable: str):
 cwd = os.getcwd().replace("\\", "/")
 
 # informazioni per il bot
-#critical_pos = cwd + "/critical/info.json"
+critical_pos = cwd + "/critical/info.json"
 
 # informazioni per il testing
-critical_pos = cwd + "/critical/test_info.json"
+#critical_pos = cwd + "/critical/test_info.json"
 
 # informazioni critiche
 critical_file = open(critical_pos)
