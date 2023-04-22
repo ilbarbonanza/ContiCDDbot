@@ -226,10 +226,10 @@ def variable_to_file(pos: str, variable: str):
 cwd = os.getcwd().replace("\\", "/")
 
 # informazioni per il bot
-critical_pos = cwd + "/critical/info.json"
+#critical_pos = cwd + "/critical/info.json"
 
 # informazioni per il testing
-#critical_pos = cwd + "/critical/test_info.json"
+critical_pos = cwd + "/critical/test_info.json"
 
 # informazioni critiche
 critical_file = open(critical_pos)
@@ -353,6 +353,7 @@ Lista di Comandi:
 /donazione [danaro], [causale] - dona l'ammontare indicato alla Cassa
 /movimenti - mostra tutti i movimenti del proprio conto
 /movimenti [lunghezza] - mostra i più recenti movimenti del proprio conto, specificando quanti
+/movimenti [parola] - mostra solo i movimenti con la parola cercata
 /nope - rifiuta tutti gli accrediti possibili
 /nope [codice1], [codice2], ... - rifiuta gli accrediti selezionati
 /okay - approva tutti gli accrediti possibili
@@ -1212,29 +1213,48 @@ async def movimenti(message: types.Message):
     riga_end = int(sheet.cell(cella.row, cella.col + 1).value)
 
     # numero di movimenti da mostrare
-    lunghezza = str(message.text[11:])
+    parametro = str(message.text[11:])
 
-    # se non è specificato alcun parametro nel comando allora mostra tutti i movimenti, altrimenti ne mostra tanti quanti specificati
-    if (lunghezza == ""):
+    target = ""
+
+    # se non è specificato alcun parametro nel comando allora mostra tutti i movimenti
+    if (parametro == ""):
+
         riga = cella.row + 2
-    else:
-        # prova a convertire l'argomento [lunghezza] in numero intero, se non ci riesce manda un messaggio e fine
-        try:
-            lunghezza = int(lunghezza)
-        except:
-            await bot.send_message(id_chat, "Il valore inserito non è un numero intero. Riprova per favore", reply_to_message_id = message.message_id)
-            return
-        
-        if (lunghezza <= 0):
-            await bot.send_message(id_chat, "La lunghezza non può essere nulla o negativa. Riprova per favore", reply_to_message_id = message.message_id)
-            return
-        
-        riga = riga_end - lunghezza
 
-        if (riga < 7):
-            await bot.send_message(id_chat, "La lunghezza va oltre il numero di movimenti. Riprova per favore", reply_to_message_id = message.message_id)
+    else:
+
+        try:
+            parametro = int(parametro)
+        except:
+            parametro
+
+        # se il parametro è un intero allora è il numero di movimenti più recenti
+        if (type(parametro) is int):
+        
+            if (parametro <= 0):
+                await bot.send_message(id_chat, "La lunghezza non può essere nulla o negativa. Riprova per favore", reply_to_message_id = message.message_id)
+                return
+        
+            riga = riga_end - parametro
+
+            if (riga < 7):
+                await bot.send_message(id_chat, "La lunghezza va oltre il numero di movimenti. Riprova per favore", reply_to_message_id = message.message_id)
+                return
+
+        # se il parametro è una stringa allora è la stringa che si cerca nei movimenti
+        elif (type(parametro) is str):
+
+            target = parametro
+
+            riga = cella.row + 2
+
+        # se il parametro è di un altro tipo, manda un messaggio e fine
+        else:
+
+            await bot.send_message(id_chat, "Il valore inserito non è accettabile. Riprova per favore", reply_to_message_id = message.message_id)
             return
-    
+
     # saldo del conto del mittente del comando
     saldo = str(sheet.cell(cella.row, cella.col + 2).value)[2:]
 
@@ -1252,55 +1272,113 @@ async def movimenti(message: types.Message):
     # lista di movimenti del proprio conto a partire dall'intervallo specificato
     movements = sheet.get(intervallo)
 
-    # conteggio statistiche dei movimenti specificati
-    entrate = 0
-    uscite = 0
-
-    for i in range(len(movements)):
-        
-        tipo = movements[i][1]
-        danaro = locale.atof(movements[i][2][2:])
-
-        if (tipo == "R" or tipo == "A"):
-            entrate += danaro
-
-        elif (tipo == "P" or tipo == "V"):
-            uscite += danaro
-
     # menzione del mittente del comando
     mention = "[" + find_name(id_mittente) + "](tg://user?id=" + id_mittente + ")"
 
     # inizializzazione della stringa risposta
     risposta = mention + ", ecco i movimenti del tuo conto:\n            Data       | § |  Valore  | Motivo\n"
 
-    # scrivo i movimenti nella stringa risposta
-    for i in range(len(movements)):
+    # se non si cerca una stringa nei movimenti allora mostra tutti i movimenti
+    if (target == ""):
 
-        # stringa dove vengono salvati i movimenti dell'iterazione precedente
-        response = risposta
+        entrate = 0
+        uscite = 0
 
-        # stringa dove viene salvato il movimento dell'iterazione corrente
-        movimento = str(i + 1) + ") "
+        # scrivo i movimenti nella stringa risposta
+        for i in range(len(movements)):
 
-        # concatenazione informazioni di un movimento
-        for j in range(0, len(movements[i])):
-            movimento = movimento + str(movements[i][j]) + " | "
+            # conteggio statistiche dei movimenti specificati
+            tipo = movements[i][1]
+            danaro = locale.atof(movements[i][2][2:])
+
+            if (tipo == "R" or tipo == "A"):
+                entrate += danaro
+
+            elif (tipo == "P" or tipo == "V"):
+                uscite += danaro
+
+            # stringa dove vengono salvati i movimenti dell'iterazione precedente
+            response = risposta
+
+            # stringa dove viene salvato il movimento dell'iterazione corrente
+            movimento = str(i + 1) + ") "
+
+            # concatenazione informazioni di un movimento
+            for j in range(0, len(movements[i])):
+                movimento = movimento + str(movements[i][j]) + " | "
         
-        # formattazione stringa movimento
-        if (movimento.__contains__("None")):
-            movimento = str(movimento[: -8])
+            # formattazione stringa movimento
+            if (movimento.__contains__("None")):
+                movimento = str(movimento[: -8])
+            else:
+                movimento = str(movimento[: -3])
+        
+            # stringa dove vengono salvati i movimenti delle iterazioni precedenti (< 4096 byte) e dell'iterazione corrente
+            risposta = risposta + movimento + "\n"
+        
+            # se il messaggio è troppo lungo (MESSAGE_TOO_LONG Telegram API Error), manda i movimenti dell'iterazione precedente
+            if (sys.getsizeof(risposta) >= 4096):
+                await bot.send_message(id_chat, response, parse_mode = "Markdown", reply_to_message_id = message.message_id)
+                risposta = movimento + "\n"
+        
+        await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_to_message_id = message.message_id)
+    
+    # se si cerca una stringa nei movimenti allora mostra i movimenti con quella stringa
+    else:
+
+        counter = 0
+        entrate = 0
+        uscite = 0
+
+        # scrivo i movimenti nella stringa risposta
+        for i in range(len(movements)):
+
+            if ((len(movements[i]) > 3 and (not str(movements[i][3]).__contains__(target))) or len(movements[i]) <= 3):
+                continue
+            
+            # conteggio statistiche dei movimenti specificati
+            tipo = movements[i][1]
+            danaro = locale.atof(movements[i][2][2:])
+
+            if (tipo == "R" or tipo == "A"):
+                entrate += danaro
+
+            elif (tipo == "P" or tipo == "V"):
+                uscite += danaro
+
+            # stringa dove vengono salvati i movimenti dell'iterazione precedente
+            response = risposta
+
+            # stringa dove viene salvato il movimento dell'iterazione corrente
+            movimento = str(counter + 1) + ") "
+
+            # concatenazione informazioni di un movimento
+            for j in range(0, len(movements[i])):
+                movimento = movimento + str(movements[i][j]) + " | "
+        
+            # formattazione stringa movimento
+            if (movimento.__contains__("None")):
+                movimento = str(movimento[: -8])
+            else:
+                movimento = str(movimento[: -3])
+        
+            # stringa dove vengono salvati i movimenti delle iterazioni precedenti (< 4096 byte) e dell'iterazione corrente
+            risposta = risposta + movimento + "\n"
+        
+            # se il messaggio è troppo lungo (MESSAGE_TOO_LONG Telegram API Error), manda i movimenti dell'iterazione precedente
+            if (sys.getsizeof(risposta) >= 4096):
+                await bot.send_message(id_chat, response, parse_mode = "Markdown", reply_to_message_id = message.message_id)
+                risposta = movimento + "\n"
+
+            counter += 1
+
+        if (counter <= 0):
+
+            await bot.send_message(id_chat, "Non ci sono movimenti con la parola cercata", reply_to_message_id = message.message_id)
+
         else:
-            movimento = str(movimento[: -3])
-        
-        # stringa dove vengono salvati i movimenti delle iterazioni precedenti (< 4096 byte) e dell'iterazione corrente
-        risposta = risposta + movimento + "\n"
-        
-        # se il messaggio è troppo lungo (MESSAGE_TOO_LONG Telegram API Error), manda i movimenti dell'iterazione precedente
-        if (sys.getsizeof(risposta) >= 4096):
-            await bot.send_message(id_chat, response, parse_mode = "Markdown", reply_to_message_id = message.message_id)
-            risposta = movimento + "\n"
 
-    await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_to_message_id = message.message_id)
+            await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_to_message_id = message.message_id)
 
     await bot.send_message(id_chat, "\n*Saldo:  " + saldo + "*\nSaldo parziale: " + locale.currency(round(entrate + uscite, 2)) + "\nNumero movimenti: " + str(riga_end - 7), parse_mode = "Markdown", reply_to_message_id = message.message_id)
 
