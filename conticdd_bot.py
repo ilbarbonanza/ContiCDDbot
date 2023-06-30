@@ -2999,7 +2999,7 @@ async def strozzino(message: types.Message):
         return
     
     # intervallo di celle che contengono i debiti
-    intervallo = rowcol_to_a1(1, 4) + ":" + rowcol_to_a1(15, 4)
+    intervallo = rowcol_to_a1(1, 4) + ":" + rowcol_to_a1(len(nomi_id), 4)
 
     # lista di debiti a partire dall'intervallo specificato
     debiti = foglio.get(intervallo)
