@@ -165,45 +165,15 @@ def print_accrediti():
     return risposta
 
 
-# metodo per stampare i crediti
-def print_crediti(id: str):
-    counter = 0
-    risposta = "Ecco i tuoi crediti:\n   Codice |     $      | Motivo   "
-    for i in range(len(accrediti)):
-        id_creditore = accrediti[i][4]
-        if (id_creditore == id or (id_creditore == ID_CASSA and id == ID_LUCA)):
-            counter += 1
-            if (id == ID_CASSA):
-                id = ID_LUCA
-            risposta = risposta + "\n" + str(counter) + ")   *" + str(accrediti[i][0]) + "*   | " + locale.currency(abs(float(accrediti[i][9]))) + " | Da *" + accrediti[i][7] + "* per " + accrediti[i][10]
-        else:
-            continue
-    return risposta
-
-
-# metodo per stampare i debiti
-def print_debiti(id: str):
-    counter = 0
-    risposta = "Ecco i tuoi debiti:\n   Codice |     $      | Motivo   "
-    for i in range(len(accrediti)):
-        id_debitore = accrediti[i][8]
-        if (id_debitore == id or (id_debitore == ID_CASSA and id == ID_LUCA)):
-            counter += 1
-            if (id == ID_CASSA):
-                id = ID_LUCA
-            risposta = risposta + "\n" + str(counter) + ")   *" + str(accrediti[i][0]) + "*   | " + locale.currency(abs(float(accrediti[i][9]))) + " | Verso *" + accrediti[i][3] + "* per " + accrediti[i][10]
-        else:
-            continue
-    return risposta
-
-
 # metodo di supporto per ordinare l'array accrediti
 def sort_debtor(val):
     return val[7]
 
+
 # metodo di supporto per ordinare l'array cantina
 def sort_product(val):
     return val[0]
+
 
 # metodo per stampare la data nel formato gg/mm/aaaa
 def time():
@@ -967,21 +937,31 @@ async def crediti(message: types.Message):
         await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
         return
 
+    counter = 0
     empty = True
+    risposta = "Ecco i tuoi crediti:\n   Codice |     $      | Motivo   "
     totale = 0
 
     for i in range(len(accrediti)):
+
         id_creditore = accrediti[i][4]
+
         if (id_creditore == id_mittente or (id_creditore == ID_CASSA and id_mittente == ID_LUCA)):
+
+            if (id_mittente == ID_CASSA):
+                id_mittente = ID_LUCA
+
+            counter += 1
             empty = False
-            totale += float(accrediti[i][9])
+            risposta = risposta + "\n" + str(counter) + ")   *" + str(accrediti[i][0]) + "*   | " + locale.currency(abs(float(accrediti[i][9]))) + " | Da *" + accrediti[i][7] + "* per " + accrediti[i][10]
+            totale += int(abs(float(accrediti[i][9])) * 100)
 
     # se non ci sono crediti in attesa manda un messaggio e fine
     if (len(accrediti) <= 0 or empty):
         await bot.send_message(id_chat, "Non ci sono crediti in attesa")
         return
 
-    risposta = print_crediti(id_mittente) + "\n\nTotale: " + locale.currency(abs(totale))
+    risposta = risposta + "\n\nTotale: " + locale.currency(float(totale) / 100)
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
@@ -1003,21 +983,31 @@ async def debiti(message: types.Message):
         await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
         return
 
+    counter = 0
     empty = True
+    risposta = "Ecco i tuoi debiti:\n   Codice |     $      | Motivo   "
     totale = 0
 
     for i in range(len(accrediti)):
+
         id_debitore = accrediti[i][8]
+
         if (id_debitore == id_mittente or (id_debitore == ID_CASSA and id_mittente == ID_LUCA)):
+
+            if (id_mittente == ID_CASSA):
+                id_mittente = ID_LUCA
+
+            counter += 1
             empty = False
-            totale += float(accrediti[i][9])
+            risposta = risposta + "\n" + str(counter) + ")   *" + str(accrediti[i][0]) + "*   | " + locale.currency(abs(float(accrediti[i][9]))) + " | Verso *" + accrediti[i][3] + "* per " + accrediti[i][10]
+            totale += int(abs(float(accrediti[i][9])) * 100)
 
     # se non ci sono debiti in attesa manda un messaggio e fine
     if (len(accrediti) <= 0 or empty):
         await bot.send_message(id_chat, "Non ci sono debiti in attesa")
         return
 
-    risposta = print_debiti(id_mittente) + "\n\nTotale: " + locale.currency(abs(totale))
+    risposta = risposta + "\n\nTotale: " + locale.currency(float(totale) / 100)
 
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
@@ -3059,6 +3049,9 @@ async def strozzino(message: types.Message):
     # contatore di quanti accrediti sono stati creati con successo
     counter = 0
 
+    # lista dei nuovi accrediti creati con questo comando
+    nuovi_accrediti = []
+
     # creazione degli accrediti
     for i in range(len(temp)):
 
@@ -3100,6 +3093,9 @@ async def strozzino(message: types.Message):
         # inserimento dell'accredito in coda all'array accrediti
         accrediti.append(accredito)
 
+        # inserimento dell'accredito in coda all'array nuovi_accrediti
+        nuovi_accrediti.append(accredito)
+
         # aggiornamento del file accrediti.txt
         arrayofarray_to_file(POS_A, accrediti)
 
@@ -3115,7 +3111,11 @@ async def strozzino(message: types.Message):
     accrediti.sort(key = sort_debtor)
 
     # stringa di risposta per il mittente
-    risposta = "Creati *" + str(counter) + "* accrediti\n\n" + print_crediti(ID_LUCA)
+    risposta = "Creati *" + str(counter) + "* accrediti\n"
+
+    for i in range(len(nuovi_accrediti)):
+
+        risposta = risposta + "\n" + str(i + 1) + ")   *" + str(nuovi_accrediti[i][0]) + "*   | " + locale.currency(abs(float(nuovi_accrediti[i][9]))) + " | Da *" + nuovi_accrediti[i][7] + "* per " + nuovi_accrediti[i][10]
 
     # notifica per il mittente
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_to_message_id = message.message_id)
