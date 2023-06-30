@@ -2877,8 +2877,47 @@ async def saldo(message: types.Message):
         # percentuale di soldi custoditi in ATM rispetto al totale
         percentuale = feuille.cell(3, 12).value
 
-        risposta += "\nSoldi in ATM:  " + soldi + " (" + percentuale + ")"
+        risposta += "\n\nSoldi in ATM:  " + soldi + " (" + percentuale + ")"
     
+    await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
+
+
+# il comando /saldi mostra solo a Luca e Pippo i saldi di ogni conto
+@dp.message_handler(commands = ["saldi"])
+async def saldi(message: types.Message):
+
+    id_mittente = str(message.from_user.id)
+    id_chat = str(message.chat.id)
+
+    # se il comando arriva da uno sconosciuto allora logga un avviso e fine
+    if (is_stranger(id_mittente)):
+        log(message, "saldi")
+        return
+
+    # se l'id del mittente del messaggio è nella blacklist manda un messaggio e fine
+    if (is_blacklisted(id_mittente)):
+        await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
+        return
+    
+    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
+    if (id_mittente != ID_LUCA and id_mittente != ID_PIPPO):
+        await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
+        return
+
+    # intervallo di celle che contengono i saldi dei conti
+    intervallo = rowcol_to_a1(5, 1) + ":" + rowcol_to_a1(5, 74)
+        
+    # saldi dei conti a partire dall'intervallo specificato
+    saldi = sheet.get(intervallo)
+
+    risposta = "Ecco i saldi dei conti:\n\n" + nomi_id[len(nomi_id) - 1][0] + ": " + saldi[0][3]
+
+    # stampa dei saldi
+    for i in range(0, len(nomi_id) - 1):
+
+        saldo = saldi[0][i * 5 + 8]
+        risposta += "\n" + nomi_id[i][0] + ": " + saldo
+
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
 
