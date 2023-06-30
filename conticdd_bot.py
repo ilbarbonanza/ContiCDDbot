@@ -2846,18 +2846,6 @@ async def saldo(message: types.Message):
 
         risposta += "\n\nSoldi in ATM:  " + soldi + " (" + percentuale + ")\n"
 
-        # intervallo di celle che contengono i saldi dei conti
-        intervallo = rowcol_to_a1(5, 11) + ":" + rowcol_to_a1(5, 74)
-        
-        # saldi dei conti a partire dall'intervallo specificato
-        saldi = sheet.get(intervallo)
-
-        # stampa dei saldi
-        for i in range(1, len(nomi_id) - 1):
-
-            saldo = saldi[0][(i - 1) * 5 + 3]
-            risposta += "\n" + nomi_id[i][0] + ": " + saldo
-
     # se il mittente è Riky allora manda il saldo atm
     if (id_mittente == ID_RIKY):
 
@@ -3140,9 +3128,9 @@ async def tastiera(message: types.Message):
 
     # tastiera dei comandi
     if (id_mittente == str(ID_LUCA)):
-        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/no"], ["/nope", "/nuke", "/ok"], ["/okay", "/ping", "/ruok"], ["/saldo", "/strozzino"]]
+        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/no"], ["/nope", "/nuke", "/ok"], ["/okay", "/ping", "/ruok"], ["/saldi", "/saldo", "/strozzino"]]
     elif (id_mittente == str(ID_PIPPO)):
-        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/registro", "/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/registro", "/ruok", "/saldi"], ["/saldo"]]
     elif (id_mittente == str(ID_RIKY)):
         keyboard = [["/aiuto", "/cantina", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/movimenti", "/no"], ["/nope", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"]]
     else:
