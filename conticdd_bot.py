@@ -1370,7 +1370,7 @@ async def movimenti(message: types.Message):
 
             await bot.send_message(id_chat, risposta, parse_mode = "Markdown", reply_to_message_id = message.message_id)
 
-    await bot.send_message(id_chat, "\n*Saldo:  " + saldo + "*\nSaldo parziale: " + locale.currency(round(entrate + uscite, 2)) + "\nNumero movimenti: " + str(riga_end - 7), parse_mode = "Markdown", reply_to_message_id = message.message_id)
+    await bot.send_message(id_chat, "\n*Saldo totale:  " + saldo + "*\nSaldo parziale: " + locale.currency(round(entrate + uscite, 2)) + "\nTotale movimenti: " + str(riga_end - 7), parse_mode = "Markdown", reply_to_message_id = message.message_id)
 
 
 # il comando /no permette solo a Luca e Riky di rifiutare una transazione
