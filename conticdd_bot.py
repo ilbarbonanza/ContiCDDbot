@@ -2860,7 +2860,7 @@ async def saldo(message: types.Message):
     await bot.send_message(id_chat, risposta, parse_mode = "Markdown")
 
 
-# il comando /saldi mostra solo a Luca e Pippo i saldi di ogni conto
+# il comando /saldi mostra solo a Luca, Pippo e Riky i saldi di ogni conto
 @dp.message_handler(commands = ["saldi"])
 async def saldi(message: types.Message):
 
@@ -2877,8 +2877,8 @@ async def saldi(message: types.Message):
         await bot.send_message(id_chat, "Non puoi usare questo comando perchè sei nella blacklist", reply_to_message_id = message.message_id)
         return
     
-    # se il mitttente del messaggio non è Pippo manda un messaggio e fine
-    if (id_mittente != ID_LUCA and id_mittente != ID_PIPPO):
+    # se il mitttente del messaggio non è Luca o Pippo o Riky manda un messaggio e fine
+    if (id_mittente != ID_LUCA and id_mittente != ID_PIPPO and id_mittente != ID_RIKY):
         await bot.send_message(id_chat, "Non hai il permesso di eseguire questo comando", reply_to_message_id = message.message_id)
         return
 
@@ -3132,7 +3132,7 @@ async def tastiera(message: types.Message):
     elif (id_mittente == str(ID_PIPPO)):
         keyboard = [["/aiuto", "/blacklist", "/cantina"], ["/capitale", "/coda", "/conti"], ["/crediti", "/debiti", "/debug"], ["/lista", "/movimenti", "/nope"], ["/nuke", "/okay", "/ping"], ["/registro", "/ruok", "/saldi"], ["/saldo"]]
     elif (id_mittente == str(ID_RIKY)):
-        keyboard = [["/aiuto", "/cantina", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/movimenti", "/no"], ["/nope", "/ok", "/okay"], ["/ping", "/ruok", "/saldo"]]
+        keyboard = [["/aiuto", "/cantina", "/capitale"], ["/coda", "/conti", "/crediti"], ["/debiti", "/movimenti", "/no"], ["/nope", "/ok", "/okay"], ["/ping", "/ruok", "/saldi"], ["/saldo"]]
     else:
         keyboard = [["/aiuto", "/cantina", "/capitale"], ["/conti", "/crediti", "/debiti"], ["/movimenti", "/nope", "/okay"], ["/ping", "/ruok", "/saldo"]]
 
